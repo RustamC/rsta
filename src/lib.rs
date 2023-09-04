@@ -31,7 +31,7 @@ impl StaEngine {
     ///
     /// # Arguments
     ///
-    /// * `filename` - A Path that holds the name of the Liberty file
+    /// * `filename` - A path that holds the name of the Liberty file
     pub fn read_liberty(&mut self, filename: &Path) {
         let bytes = filename.to_str().unwrap().as_bytes();
         let filename = std::ffi::CString::new(bytes).unwrap();
@@ -44,31 +44,35 @@ impl StaEngine {
     ///
     /// # Arguments
     ///
-    /// * `filename` - A Path that holds the name of the Verilog file
+    /// * `filename` - A path that holds the name of the Verilog file
     pub fn read_verilog(&mut self, filename: &Path) -> bool {
         let bytes = filename.to_str().unwrap().as_bytes();
         let filename = std::ffi::CString::new(bytes).unwrap();
-        unsafe {
-            self.sta.as_mut().read_verilog(filename.as_ptr())
-        }
+        unsafe { self.sta.as_mut().read_verilog(filename.as_ptr()) }
     }
 
+    /// Link the design
+    ///
+    /// # Arguments
+    ///
+    /// * `top_cell_name` - Name of the top cell
     pub fn link_design(&mut self, top_cell_name: &str) -> bool {
         self.top_cell_name = Some(top_cell_name.to_string());
 
         let bytes = top_cell_name.as_bytes();
         let top_cell_name = std::ffi::CString::new(bytes).unwrap();
-        unsafe {
-            self.sta.as_mut().link_design(top_cell_name.as_ptr())
-        }
+        unsafe { self.sta.as_mut().link_design(top_cell_name.as_ptr()) }
     }
 
+    /// Reads constraints file (.sdc)
+    ///
+    /// # Arguments
+    ///
+    /// * `filename` - A path that holds the name of the SDC file
     pub fn read_sdc(&mut self, filename: &Path) -> i32 {
         let bytes = filename.to_str().unwrap().as_bytes();
         let filename = std::ffi::CString::new(bytes).unwrap();
-        unsafe {
-            self.sta.as_mut().read_sdc(filename.as_ptr()).into()
-        }
+        unsafe { self.sta.as_mut().read_sdc(filename.as_ptr()).into() }
     }
 }
 
@@ -79,10 +83,10 @@ impl Default for StaEngine {
 }
 
 #[test]
-fn test() {
-    //let mut sta = StaEngine::default();
+fn test_library_reading() {
+    let mut sta = StaEngine::default();
 
-    //let liberty_path = Path::new("");
-    //dbg!(liberty_path);
-    //sta.read_liberty(liberty_path);
+    let liberty_path = Path::new("./examples/Nangate45_fast.lib");
+    dbg!(liberty_path);
+    sta.read_liberty(liberty_path);
 }

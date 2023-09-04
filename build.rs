@@ -3,7 +3,18 @@ use std::path::Path;
 
 fn main() -> miette::Result<()> {
     let wrapper_path = std::path::PathBuf::from("./");
-    let sta_path = std::path::PathBuf::from("opensta/include/sta");
+
+    let sta_path = env::var("OPENSTA_DIR").unwrap_or("./opensta".to_string());
+    let sta_path = std::path::PathBuf::from(sta_path)
+        .join("include")
+        .join("sta");
+
+    if !sta_path.exists() {
+        eprintln!(
+            "{} is not a directory! Set OPENSTA_DIR environmnet variable!",
+            sta_path.display()
+        );
+    }
 
     let mut sta_bind =
         autocxx_build::Builder::new("src/bridge.rs", &[&wrapper_path, &sta_path]).build()?;
