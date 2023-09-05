@@ -7,11 +7,17 @@
 namespace sta_adapter {
     using namespace sta;
 
+    enum DelayCalcMode {
+        Min,
+        Max,
+        All
+    };
+
     class OpenSta {
         public:
             OpenSta();
             ~OpenSta() {};
-            void read_liberty(const char *filename);
+            bool read_liberty(const char *filename, const char *corner_name, DelayCalcMode min_max, bool infer_latches);
             bool read_verilog(const char *filename);
             bool link_design(const char *top_cell_name);
             int read_sdc(const char *filename);
@@ -24,16 +30,44 @@ namespace sta_adapter {
         
         sta::initSta();
         this->sta = new sta::Sta;
-        Sta::setSta(this->sta);
         this->sta->makeComponents();
         this->sta->setTclInterp(interp);
     }
 
-    void OpenSta::read_liberty(const char *filename) {
-        this->sta->readLiberty(filename, 
-                          this->sta->cmdCorner(),
-                          sta::MinMaxAll::all(),
-                          true);
+    bool OpenSta::read_liberty(const char *filename, const char *corner_name, DelayCalcMode min_max, bool infer_latches) {
+        sta::MinMaxAll *mm = nullptr;
+        switch (min_max)
+        {
+        case DelayCalcMode::Min:
+            mm = sta::MinMaxAll::min();
+            break;
+        case DelayCalcMode::Max:
+            mm = sta::MinMaxAll::max();
+            break;
+        case DelayCalcMode::All:
+            mm = sta::MinMaxAll::all();
+            break;
+        };
+
+        if (corner_name == nullptr) {
+            this->sta->readLiberty(filename, 
+                            this->sta->cmdCorner(),
+                            mm,
+                            infer_latches);
+        } else {
+            Corner *corner = this->sta->findCorner(corner_name);
+
+            if (corner == nullptr) {
+                return false;
+            } else {
+                this->sta->readLiberty(filename, 
+                            corner,
+                            mm,
+                            infer_latches);
+            }
+        }
+
+        return true;
     }
 
     bool OpenSta::read_verilog(const char *filename) {

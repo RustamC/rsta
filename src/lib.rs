@@ -4,6 +4,9 @@
 
 mod bridge;
 
+pub type DelayCalcMode = bridge::DelayCalcMode;
+
+use std::ffi::CString;
 use std::path::Path;
 use std::pin::Pin;
 
@@ -31,12 +34,37 @@ impl StaEngine {
     ///
     /// # Arguments
     ///
-    /// * `filename` - A path that holds the name of the Liberty file
-    pub fn read_liberty(&mut self, filename: &Path) {
-        let bytes = filename.to_str().unwrap().as_bytes();
-        let filename = std::ffi::CString::new(bytes).unwrap();
+    /// * `filename` - A path to the Liberty file to read.
+    /// * `cornername` - A process corner used for delay calculation.
+    /// * `min_max` - Delay calculation mode: min, max, all.
+    /// * `infer_latches` - Flag to infer latches.
+    pub fn read_liberty(
+        &mut self,
+        filename: &Path,
+        cornername: Option<String>,
+        min_max: DelayCalcMode,
+        infer_latches: bool,
+    ) -> bool {
+        let filename = CString::new(filename.to_str().unwrap()).unwrap();
+
         unsafe {
-            self.sta.as_mut().read_liberty(filename.as_ptr());
+            match cornername {
+                Some(name) => {
+                    let name = CString::new(name).unwrap();
+                    self.sta.as_mut().read_liberty(
+                        filename.as_ptr(),
+                        name.as_ptr(),
+                        min_max,
+                        infer_latches,
+                    )
+                }
+                None => self.sta.as_mut().read_liberty(
+                    filename.as_ptr(),
+                    std::ptr::null(),
+                    min_max,
+                    infer_latches,
+                ),
+            }
         }
     }
 
@@ -44,10 +72,9 @@ impl StaEngine {
     ///
     /// # Arguments
     ///
-    /// * `filename` - A path that holds the name of the Verilog file
+    /// * `filename` - A path to the Verilog file to read.
     pub fn read_verilog(&mut self, filename: &Path) -> bool {
-        let bytes = filename.to_str().unwrap().as_bytes();
-        let filename = std::ffi::CString::new(bytes).unwrap();
+        let filename = CString::new(filename.to_str().unwrap()).unwrap();
         unsafe { self.sta.as_mut().read_verilog(filename.as_ptr()) }
     }
 
@@ -55,12 +82,11 @@ impl StaEngine {
     ///
     /// # Arguments
     ///
-    /// * `top_cell_name` - Name of the top cell
+    /// * `top_cell_name` - The top level module/cell name of the design hierarchy to link.
     pub fn link_design(&mut self, top_cell_name: &str) -> bool {
         self.top_cell_name = Some(top_cell_name.to_string());
 
-        let bytes = top_cell_name.as_bytes();
-        let top_cell_name = std::ffi::CString::new(bytes).unwrap();
+        let top_cell_name = CString::new(top_cell_name).unwrap();
         unsafe { self.sta.as_mut().link_design(top_cell_name.as_ptr()) }
     }
 
@@ -68,10 +94,9 @@ impl StaEngine {
     ///
     /// # Arguments
     ///
-    /// * `filename` - A path that holds the name of the SDC file
+    /// * `filename` - A path to the SDC file to read.
     pub fn read_sdc(&mut self, filename: &Path) -> i32 {
-        let bytes = filename.to_str().unwrap().as_bytes();
-        let filename = std::ffi::CString::new(bytes).unwrap();
+        let filename = CString::new(filename.to_str().unwrap()).unwrap();
         unsafe { self.sta.as_mut().read_sdc(filename.as_ptr()).into() }
     }
 }
@@ -88,5 +113,10 @@ fn test_library_reading() {
 
     let liberty_path = Path::new("./examples/Nangate45_fast.lib");
     dbg!(liberty_path);
-    sta.read_liberty(liberty_path);
+    sta.read_liberty(
+        liberty_path,
+        Some("fast".to_string()),
+        DelayCalcMode::All,
+        true,
+    );
 }
