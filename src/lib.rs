@@ -1,6 +1,6 @@
-//! # sta
+//! # rsta
 //!
-//! `sta` is a wrapper for OpenSTA
+//! `rsta` is a wrapper for OpenSTA
 
 mod bridge;
 
